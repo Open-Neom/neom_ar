@@ -19,7 +19,7 @@ dependencies:
   neom_core: ^2.0.0
   neom_commons: ^2.0.0
 
-  vector_math: ^2.1.4
+  vector_math: ^2.2.0
   hive_flutter: ^1.1.0
 
   # Platform-specific AR engines
