@@ -15,7 +15,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  sint: ^1.3.0
+  sint: ^2.0.0
   neom_core: ^2.0.0
   neom_commons: ^2.0.0
 
