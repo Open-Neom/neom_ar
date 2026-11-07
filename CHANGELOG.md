@@ -1,3 +1,8 @@
+# Changelog
+
+## 1.0.2 — 2026-11-07
+- Upgrade to `sint: ^2.0.0`, extract modular VRlizate SDK services, and add `@Open-Neom` GitHub Sponsors `funding` metadata.
+
 ## [2026-07-25] - Dependencias Externas
 - Actualizacion de dependencias externas a sus versiones mas recientes y compatibles.
 

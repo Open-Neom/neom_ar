@@ -4,8 +4,12 @@ description: >
   (Android) behind a unified interface. Distance measurement, plane
   detection, room scanning, and 3D marker visualization for acoustic
   levitation chamber analysis.
-version: 1.0.0
+version: 1.0.2
 homepage: https://github.com/Open-Neom/neom_ar
+repository: https://github.com/Open-Neom/neom_ar
+issue_tracker: https://github.com/Open-Neom/neom_ar/issues
+funding:
+  - https://github.com/sponsors/Open-Neom
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
