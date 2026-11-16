@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:sint/sint.dart';
 
+import '../../domain/models/ar_measurement.dart';
 import '../controllers/ar_measure_controller.dart';
 
 /// Card showing the current room dimension assignments.
 ///
-/// When all 3 dimensions are assigned, shows "Send to Levitation" button
-/// to export the measurements to neom_levitation.
+/// When all 3 dimensions are assigned, exports the measurements via
+/// [onExportDimensions] or navigates to [exportRoute] (falling back to
+/// `Sint.maybePop` with the measured dimensions map if unavailable).
 class RoomDimensionsCard extends StatelessWidget {
   final ArMeasureController controller;
+  final String? exportRoute;
+  final ValueChanged<ArRoomMeasurement>? onExportDimensions;
 
-  const RoomDimensionsCard({super.key, required this.controller});
+  const RoomDimensionsCard({
+    super.key,
+    required this.controller,
+    this.exportRoute = '/levitation',
+    this.onExportDimensions,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -63,13 +72,24 @@ class RoomDimensionsCard extends StatelessWidget {
                   ),
                   onPressed: () {
                     final room = controller.roomMeasurement;
-                    // Navigate to levitation with measured dimensions
-                    Sint.toNamed('/levitation', arguments: {
+                    if (onExportDimensions != null) {
+                      onExportDimensions!(room);
+                      return;
+                    }
+                    final args = <String, dynamic>{
                       'lengthX': room.width,
                       'lengthY': room.depth,
                       'lengthZ': room.height,
                       'source': 'ar_measurement',
-                    });
+                    };
+                    final route = exportRoute;
+                    if (route != null && route.isNotEmpty) {
+                      try {
+                        Sint.toNamed(route, arguments: args);
+                        return;
+                      } catch (_) {}
+                    }
+                    Sint.maybePop(args);
                   },
                 ),
               ),

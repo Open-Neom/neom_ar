@@ -19,20 +19,27 @@ dependencies:
   flutter:
     sdk: flutter
 
-  sint: ^2.0.0
+  sint: ^2.0.2
+
   neom_core: ^2.0.0
   neom_commons: ^2.0.0
 
-  vector_math: ^2.2.0
+  vector_math: ^2.4.4
+
+
   hive_flutter: ^1.1.0
 
+
   # Platform-specific AR engines
-  arkit_plugin: ^1.0.7
+  arkit_plugin: ^1.5.0
+
   arcore_flutter_plugin: ^0.1.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
+
+
 
 flutter:

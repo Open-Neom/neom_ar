@@ -43,6 +43,9 @@ class ArcoreArService implements ArService {
 
     // Listen for plane detection
     controller.onPlaneDetected = (plane) {
+      final centerPose = plane.centerPose;
+      if (centerPose == null || _planeController.isClosed) return;
+
       ArPlaneType type;
       switch (plane.type?.index) {
         case 0: type = ArPlaneType.horizontalUp;
@@ -55,8 +58,8 @@ class ArcoreArService implements ArService {
         id: 'plane_${plane.hashCode}',
         type: type,
         centerPose: ArPose.fromTranslationRotation(
-          plane.centerPose!.translation,
-          plane.centerPose!.rotation,
+          centerPose.translation,
+          centerPose.rotation,
         ),
         extentX: plane.extendX ?? 0.0,
         extentZ: plane.extendZ ?? 0.0,

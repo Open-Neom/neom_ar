@@ -45,6 +45,7 @@ class ArkitArService implements ArService {
 
     // Listen for plane anchors
     controller.onAddNodeForAnchor = (anchor) {
+      if (_planeController.isClosed) return;
       if (anchor is ARKitPlaneAnchor) {
         final pose = ArPose.fromMatrix4(anchor.transform);
         _planeController.add(ArPlane(

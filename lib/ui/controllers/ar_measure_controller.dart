@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:sint/sint.dart';
 
 import '../../data/implementations/ar_measurement_impl.dart';
@@ -13,8 +15,16 @@ import '../../domain/use_cases/ar_service.dart';
 /// Manages the measurement flow: tap to place points, calculate
 /// distance, assign to room dimensions (width/depth/height).
 class ArMeasureController extends SintController {
+  ArMeasureController({ArService? arService}) : _arServiceOverride = arService;
+
+  static const int maxDetectedPlanes = 256;
+
+  final ArService? _arServiceOverride;
   late final ArService arService;
   final measureService = ArMeasurementImpl();
+  StreamSubscription<ArPlane>? _planeSub;
+  bool _serviceInitialized = false;
+  bool _disposed = false;
 
   // State
   final measureState = ArMeasureState.idle.obs;
@@ -36,15 +46,27 @@ class ArMeasureController extends SintController {
   @override
   void onInit() {
     super.onInit();
-    arService = ArPlatformFactory.create();
+    if (_disposed) return;
+    if (!_serviceInitialized) {
+      arService = _arServiceOverride ?? ArPlatformFactory.create();
+      _serviceInitialized = true;
+    }
     _checkSupport();
   }
 
   Future<void> _checkSupport() async {
-    isArSupported.value = await arService.isSupported();
-    if (isArSupported.value) {
-      arService.onPlaneDetected.listen((plane) {
+    if (_disposed || !_serviceInitialized) return;
+    final supported = await arService.isSupported();
+    if (_disposed) return;
+    isArSupported.value = supported;
+    if (supported) {
+      await _planeSub?.cancel();
+      _planeSub = arService.onPlaneDetected.listen((plane) {
+        if (_disposed) return;
         if (plane.isSignificant && !detectedPlanes.any((p) => p.id == plane.id)) {
+          if (detectedPlanes.length >= maxDetectedPlanes) {
+            detectedPlanes.removeAt(0);
+          }
           detectedPlanes.add(plane);
         }
       });
@@ -53,14 +75,16 @@ class ArMeasureController extends SintController {
 
   /// Start a new measurement session.
   void startMeasuring() {
+    if (_disposed) return;
     measureState.value = ArMeasureState.scanning;
     statusMessage.value = 'arScanSurfaces'.tr;
   }
 
   /// Handle a tap on the AR view.
   Future<void> onTap(double x, double y) async {
+    if (_disposed || !_serviceInitialized || !x.isFinite || !y.isFinite) return;
     final results = await arService.hitTest(x, y);
-    if (results.isEmpty) return;
+    if (_disposed || results.isEmpty) return;
 
     // Use the most accurate hit result
     final best = results.first;
@@ -71,23 +95,36 @@ class ArMeasureController extends SintController {
         // Place first point
         _firstPoint = best;
         _firstMarkerId = await arService.addMarker(best, label: 'A');
+        if (_disposed) return;
         measureState.value = ArMeasureState.placingSecond;
         statusMessage.value = 'arTapSecondPoint'.tr;
 
       case ArMeasureState.placingSecond:
+        final firstPoint = _firstPoint;
+        final firstMarkerId = _firstMarkerId;
+        if (firstPoint == null || firstMarkerId == null) {
+          _firstPoint = best;
+          _firstMarkerId = await arService.addMarker(best, label: 'A');
+          if (_disposed) return;
+          measureState.value = ArMeasureState.placingSecond;
+          statusMessage.value = 'arTapSecondPoint'.tr;
+          return;
+        }
         // Place second point and calculate distance
         final secondMarkerId = await arService.addMarker(best, label: 'B');
+        if (_disposed) return;
 
         final measurement = ArMeasurement(
-          pointA: _firstPoint!.pose,
+          pointA: firstPoint.pose,
           pointB: best.pose,
         );
 
         await arService.addDistanceLine(
-          _firstMarkerId!,
+          firstMarkerId,
           secondMarkerId,
           measurement,
         );
+        if (_disposed) return;
 
         currentMeasurement.value = measurement;
         measureService.addMeasurement(measurement);
@@ -97,6 +134,7 @@ class ArMeasureController extends SintController {
       case ArMeasureState.measured:
         // Reset for next measurement
         await arService.clearMarkers();
+        if (_disposed) return;
         _firstPoint = null;
         _firstMarkerId = null;
         measureState.value = ArMeasureState.placingFirst;
@@ -145,7 +183,10 @@ class ArMeasureController extends SintController {
 
   /// Reset everything.
   void reset() {
-    arService.clearMarkers();
+    if (_disposed) return;
+    if (_serviceInitialized) {
+      arService.clearMarkers();
+    }
     measureService.clear();
     _firstPoint = null;
     _firstMarkerId = null;
@@ -159,7 +200,22 @@ class ArMeasureController extends SintController {
 
   @override
   void onClose() {
-    arService.dispose();
+    if (_disposed) return;
+    _disposed = true;
+    _planeSub?.cancel();
+    _planeSub = null;
+    if (_serviceInitialized) {
+      arService.dispose();
+    }
+    measureState.close();
+    scanPhase.close();
+    currentMeasurement.close();
+    detectedPlanes.close();
+    isArSupported.close();
+    statusMessage.close();
+    roomWidth.close();
+    roomDepth.close();
+    roomHeight.close();
     super.onClose();
   }
 }

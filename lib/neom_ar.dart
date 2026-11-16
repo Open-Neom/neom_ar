@@ -23,8 +23,8 @@ export 'domain/use_cases/ar_measurement_service.dart';
 export 'domain/use_cases/ar_service.dart';
 
 // ============ Platform Implementations ============
-export 'platform/ios/arkit_ar_service.dart';
-export 'platform/android/arcore_ar_service.dart';
+export 'platform/ar_native_services_stub.dart'
+    if (dart.library.io) 'platform/ar_native_services_io.dart';
 export 'platform/stub/stub_ar_service.dart';
 
 // ============ Data Implementations ============

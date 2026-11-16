@@ -3,6 +3,8 @@ import '../../domain/use_cases/ar_measurement_service.dart';
 
 /// In-memory measurement tracking for AR sessions.
 class ArMeasurementImpl implements ArMeasurementService {
+  static const int maxMeasurements = 512;
+
   final _measurements = <ArMeasurement>[];
   ArMeasurement? _width;
   ArMeasurement? _depth;
@@ -20,6 +22,9 @@ class ArMeasurementImpl implements ArMeasurementService {
 
   @override
   void addMeasurement(ArMeasurement measurement) {
+    if (_measurements.length >= maxMeasurements) {
+      _measurements.removeAt(0);
+    }
     _measurements.add(measurement);
   }
 

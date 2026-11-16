@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sint/sint.dart';
 
 import '../../domain/models/ar_enums.dart';
+import '../../domain/models/ar_measurement.dart';
 import '../controllers/ar_measure_controller.dart';
 import '../widgets/ar_status_bar.dart';
 import '../widgets/measurement_panel.dart';
@@ -14,9 +15,18 @@ import '../widgets/room_dimensions_card.dart';
 /// 2. Tap first point → green marker appears
 /// 3. Tap second point → line + distance label
 /// 4. Assign measurement to Width, Depth, or Height
-/// 5. When all 3 are assigned → can export to neom_levitation
+/// 5. When all 3 are assigned → export via [onExportDimensions] or [exportRoute]
 class ArMeasurePage extends StatelessWidget {
-  const ArMeasurePage({super.key});
+  final String? exportRoute;
+  final ValueChanged<ArRoomMeasurement>? onExportDimensions;
+  final VoidCallback? onManualInput;
+
+  const ArMeasurePage({
+    super.key,
+    this.exportRoute = '/levitation',
+    this.onExportDimensions,
+    this.onManualInput,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +105,11 @@ class ArMeasurePage extends StatelessWidget {
                         MeasurementPanel(controller: controller),
 
                       // Room dimensions
-                      RoomDimensionsCard(controller: controller),
+                      RoomDimensionsCard(
+                        controller: controller,
+                        exportRoute: exportRoute,
+                        onExportDimensions: onExportDimensions,
+                      ),
                     ],
                   ),
                 ),
@@ -144,7 +158,20 @@ class ArMeasurePage extends StatelessWidget {
             OutlinedButton.icon(
               icon: const Icon(Icons.edit),
               label: Text('arManualInput'.tr),
-              onPressed: () => Sint.toNamed('/levitation'),
+              onPressed: () {
+                if (onManualInput != null) {
+                  onManualInput!();
+                  return;
+                }
+                final route = exportRoute;
+                if (route != null && route.isNotEmpty) {
+                  try {
+                    Sint.toNamed(route);
+                    return;
+                  } catch (_) {}
+                }
+                Sint.maybePop();
+              },
             ),
           ],
         ),
